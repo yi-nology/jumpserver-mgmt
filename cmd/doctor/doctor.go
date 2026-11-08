@@ -44,10 +44,15 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 		return cli.ExitError
 	}
 	fmt.Fprint(stdout, Render(report))
-	if report.Status == jms.Status_ok {
-		return cli.ExitOK
+	// 退出码只反映 FAIL（mgmt#10，与执行面对齐）：WARN 是「值得看的建议」
+	// （delegation secret 未配这类部署选择），不是「不健康」——带 WARN 的
+	// doctor 退出非零曾迫使发版自动化 --no-doctor 跳过整个 doctor，
+	// 丢掉真 koko 登录自检去换一个部署选择的提醒。Result 行仍写
+	// "needs attention"（人读的分级不变），机器读的退出码只认 FAIL。
+	if report.Status == jms.Status_fail {
+		return cli.ExitError
 	}
-	return cli.ExitError
+	return cli.ExitOK
 }
 
 // Render turns the doctor report into the text the CLI prints.
