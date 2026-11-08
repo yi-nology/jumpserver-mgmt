@@ -36,6 +36,20 @@ func (c *Client) AccessSources(ctx context.Context, UserID string) (map[string][
 	if err != nil {
 		return nil, err
 	}
+	// The group branch below fires once per group per permission and each
+	// round is its own detail request — an N+1 the deployment can rule out in
+	// ONE list call. A deployment with no user groups can never take the
+	// branch: group-held authorization cannot exist where no group does, so
+	// the whole branch is skipped for the entire loop (issue #8). This is the
+	// same list jms_user_groups_list reads.
+	//
+	// ⚠️ A FAILED group list is not "no groups": reading an UNANSWERED
+	// question as "empty" would silently drop every group-held grant from the
+	// attribution. A failed fetch leaves the branch exactly as it was.
+	noGroups := false
+	if groups, gerr := c.List(ctx, jmsapi.ResGroups); gerr == nil {
+		noGroups = len(groups) == 0
+	}
 	out := map[string][]string{}
 	for _, p := range perms {
 		var detail map[string]any
@@ -49,7 +63,7 @@ func (c *Client) AccessSources(ctx context.Context, UserID string) (map[string][
 				holds = true
 			}
 		}
-		if !holds {
+		if !holds && !noGroups {
 			for _, g := range jmsapi.AsSlice(detail["user_groups"]) {
 				gm, ok := g.(map[string]any)
 				if !ok {
