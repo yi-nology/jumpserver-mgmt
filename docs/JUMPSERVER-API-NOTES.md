@@ -84,6 +84,15 @@ docker exec -w /opt/jumpserver/apps jms_core python manage.py shell -c \
 | `jms_nodes_list` | 资产分组节点 |
 | `jms_permissions_list` | 资产授权，用于最小权限审计 |
 
+> **`jms_status` 资产计数走哪条路（issue #7）**：先探一次 `/api/v1/assets/assets_amount/`
+> 聚合端点——答上来就用它（一次小请求出 total + 平台分布，`connectivity_ok/err` 留空，
+> 因为没有聚合端点会报连通性）。上游 v3.10 之后已不再注册该路由，v4/v5 实测 404 ⇒
+> **回退全量走表**：按 1000/页把 `/assets/assets/` 全部行拉下来本地计数。这条回退路的代价
+> 要心里有数——**500+ 台的部署上，一次 `jms_status` 就是全量资产 JSON 过网络 + 全量解析**，
+> 而它是每个 agent 会话开头都会调的工具；探测只多花一个 404 请求（404 不可重试，不放大）。
+> 分页包装开启的部署上，走表首页响应就带 `count`，总数取的是服务端自己的计数；但平台分布
+> 与连通性没有轻端点可拿，只能来自实际读到的行——这是上游能力缺口，不是本工具偷懒。
+
 **批量作业**（经 JumpServer 执行，全程留痕）
 
 | 工具 | 作用 |

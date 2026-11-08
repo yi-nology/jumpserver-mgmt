@@ -94,34 +94,20 @@ func RegisterStatusTools(r *reg.Registry, c *repository.Client) {
 			}
 		}
 
-		// The walk, not a single fetch: a one-page read silently undercounts
-		// the estate past the server's window, and this tool is the one an
-		// agent reads first to size the fleet. The total is the SERVER's own
-		// count; the distribution is over the rows actually read.
-		if rows, serverTotal, err := c.ListCounted(ctx, jmsapi.ResAssets, url.Values{"page_size": {"500"}}); err == nil {
-			byPlatform := map[string]int32{}
-			okCount, errCount := int32(0), int32(0)
-			for _, a := range rows {
-				p := jmsapi.Str(jmsapi.Nested(a, "platform", "name"))
-				if p == "" {
-					p = "(none)"
-				}
-				byPlatform[p]++
-				switch jmsapi.Label(a, "connectivity") {
-				case "ok":
-					okCount++
-				case "err":
-					errCount++
-				}
+		// The counts by the cheapest source the bastion offers: the aggregate
+		// endpoint when the deployment has one, the counted walk otherwise —
+		// repository.AssetStats owns that ladder (issue #7: this tool is what
+		// every agent session opens with, so it must not drag the whole asset
+		// list over the wire when the bastion can count). On the light path
+		// the connectivity fields stay nil: no aggregate reports it, and a
+		// number that was never learned must not be published as zero.
+		if stats, err := c.AssetStats(ctx); err == nil {
+			if stats.ByPlatform != nil {
+				out.AssetByPlatform = stats.ByPlatform
 			}
-			if serverTotal > 0 {
-				out.AssetTotal = jms.OptInt32(int32(serverTotal))
-			} else {
-				out.AssetTotal = jms.OptInt32(int32(len(rows)))
-			}
-			out.AssetByPlatform = byPlatform
-			out.ConnectivityOk = jms.OptInt32(okCount)
-			out.ConnectivityErr = jms.OptInt32(errCount)
+			out.AssetTotal = jms.OptInt32(int32(stats.Total))
+			out.ConnectivityOk = stats.ConnectivityOK
+			out.ConnectivityErr = stats.ConnectivityErr
 		}
 		return render.Text(out)
 	})
