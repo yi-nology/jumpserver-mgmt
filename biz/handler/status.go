@@ -94,11 +94,45 @@ func RegisterStatusTools(r *reg.Registry, c *repository.Client) {
 			}
 		}
 
-		// The walk, not a single fetch: a one-page read silently undercounts
-		// the estate past the server's window, and this tool is the one an
-		// agent reads first to size the fleet. The total is the SERVER's own
-		// count; the distribution is over the rows actually read.
-		if rows, serverTotal, err := c.ListCounted(ctx, jmsapi.ResAssets, url.Values{"page_size": {"500"}}); err == nil {
+		// The total comes from the SERVER's own count on a ONE-ROW probe:
+		// the envelope count is the collection size whatever the page size,
+		// so "size the fleet" costs one tiny request instead of a full
+		// estate walk (issue #7 — jms_status is the FIRST call an agent
+		// makes, and the walk made every session open drag the whole asset
+		// list just to report four numbers).
+		if _, serverTotal, err := c.ListCounted(ctx, jmsapi.ResAssets, url.Values{"page_size": {"1"}}); err == nil && serverTotal > 0 {
+			out.AssetTotal = jms.OptInt32(int32(serverTotal))
+			// The distribution needs the rows. Up to the walk cap it is
+			// exact; past it, the per-platform/connectivity numbers are
+			// marked partial rather than silently wrong.
+			const distributionCap = 1000
+			if serverTotal <= distributionCap {
+				if rows, _, err := c.ListCounted(ctx, jmsapi.ResAssets, url.Values{"page_size": {"500"}}); err == nil {
+					byPlatform := map[string]int32{}
+					okCount, errCount := int32(0), int32(0)
+					for _, a := range rows {
+						p := jmsapi.Str(jmsapi.Nested(a, "platform", "name"))
+						if p == "" {
+							p = "(none)"
+						}
+						byPlatform[p]++
+						switch jmsapi.Label(a, "connectivity") {
+						case "ok":
+							okCount++
+						case "err":
+							errCount++
+						}
+					}
+					out.AssetByPlatform = byPlatform
+					out.ConnectivityOk = jms.OptInt32(okCount)
+					out.ConnectivityErr = jms.OptInt32(errCount)
+				}
+			} else {
+				out.Note = jms.Opt(fmt.Sprintf("the estate holds %d assets — platform/connectivity distribution covers the first %d rows only (the total above is exact: the server's own count)", serverTotal, distributionCap))
+			}
+		} else if rows, serverTotal, err := c.ListCounted(ctx, jmsapi.ResAssets, url.Values{"page_size": {"500"}}); err == nil {
+			// Probe failed (an old deployment without envelope counts?):
+			// the old full walk is the fallback, unchanged.
 			byPlatform := map[string]int32{}
 			okCount, errCount := int32(0), int32(0)
 			for _, a := range rows {

@@ -98,6 +98,7 @@ type BastionStatus struct {
 	User            *string          `thrift:"user,7,optional" json:"user,omitempty"`
 	Name            *string          `thrift:"name,8,optional" json:"name,omitempty"`
 	Error           *string          `thrift:"error,9,optional" json:"error,omitempty"`
+	Note            *string          `thrift:"note,10,optional" json:"note,omitempty"`
 }
 
 func NewBastionStatus() *BastionStatus {
@@ -173,6 +174,15 @@ func (p *BastionStatus) GetError() (v string) {
 	return *p.Error
 }
 
+var BastionStatus_Note_DEFAULT string
+
+func (p *BastionStatus) GetNote() (v string) {
+	if !p.IsSetNote() {
+		return BastionStatus_Note_DEFAULT
+	}
+	return *p.Note
+}
+
 func (p *BastionStatus) IsSetConnectivityOk() bool {
 	return p.ConnectivityOk != nil
 }
@@ -195,6 +205,10 @@ func (p *BastionStatus) IsSetName() bool {
 
 func (p *BastionStatus) IsSetError() bool {
 	return p.Error != nil
+}
+
+func (p *BastionStatus) IsSetNote() bool {
+	return p.Note != nil
 }
 
 func (p *BastionStatus) String() string {

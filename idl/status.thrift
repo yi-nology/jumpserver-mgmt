@@ -51,4 +51,6 @@ struct BastionStatus {
   8: optional string name,
   /** 探不到身份时的原因（比如 token 没权限）。 */
   9: optional string error,
+  /** 答复的说明（如：分布只覆盖前 N 行——大资产库上 total 走的是服务器自己的计数）。 */
+  10: optional string note,
 }

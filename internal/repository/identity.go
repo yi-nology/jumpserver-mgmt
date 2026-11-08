@@ -36,6 +36,11 @@ func (c *Client) AccessSources(ctx context.Context, UserID string) (map[string][
 	if err != nil {
 		return nil, err
 	}
+	// 部署没有用户组 ⇒ 组授权不可能存在 ⇒ 整段 group 检查短路（一次组列表
+	// 请求换掉逐权限×2 的详情拉取；无组部署上全部省掉——issue #8）。组列表
+	// 拉不到时不短路（未知 ≠ 没有，落到逐权限详情，行为同旧）。
+	groups, gerr := c.List(ctx, jmsapi.ResGroups)
+	hasGroups := gerr == nil && len(groups) > 0
 	out := map[string][]string{}
 	for _, p := range perms {
 		var detail map[string]any
@@ -49,7 +54,7 @@ func (c *Client) AccessSources(ctx context.Context, UserID string) (map[string][
 				holds = true
 			}
 		}
-		if !holds {
+		if !holds && hasGroups {
 			for _, g := range jmsapi.AsSlice(detail["user_groups"]) {
 				gm, ok := g.(map[string]any)
 				if !ok {
