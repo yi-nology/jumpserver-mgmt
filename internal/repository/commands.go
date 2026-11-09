@@ -7,7 +7,6 @@ package repository
 
 import (
 	"context"
-	"fmt"
 	"net/url"
 
 	"github.com/oekit/pkg/convert"
@@ -44,11 +43,15 @@ func (c *Client) FetchCommands(ctx context.Context, q url.Values) ([]CommandReco
 	for _, m := range rows {
 		ts := convert.AnyToFloat64(m["timestamp"])
 		out = append(out, CommandRecord{
-			ID:         convert.AnyToStr(m["id"]),
-			Session:    convert.AnyToStr(m["session"]),
-			User:       convert.AnyToStr(m["user"]),
-			Asset:      fmt.Sprint(jmsapi.AssetField(m, "name")),
-			Address:    fmt.Sprint(jmsapi.AssetField(m, "address")),
+			ID:      convert.AnyToStr(m["id"]),
+			Session: convert.AnyToStr(m["session"]),
+			User:    convert.AnyToStr(m["user"]),
+			// Asset/Address 走空安全读（jmsapi.Str）：缺席字段统一映射成
+			// 空串——pkg#295 收编后 AnyToStr(nil) 已经是 ""，fmt.Sprint(nil)
+			// 的字面 "<nil>" 是同一行上唯一还像值的缺席（两种口径并存比
+			// 一种更糟）。
+			Asset:      jmsapi.Str(jmsapi.AssetField(m, "name")),
+			Address:    jmsapi.Str(jmsapi.AssetField(m, "address")),
 			Account:    convert.AnyToStr(m["account"]),
 			RemoteAddr: convert.AnyToStr(m["remote_addr"]),
 			Input:      convert.AnyToStr(m["input"]),

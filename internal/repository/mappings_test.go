@@ -90,11 +90,14 @@ func TestFetchCommandsMapping(t *testing.T) {
 		t.Errorf("timestamp drifted: got %v / %q", r.Timestamp, r.When)
 	}
 	// A row with only the id fields must not panic the projection.
-	// NB: the absent fields map to the literal "<nil>" (convert.AnyToStr is
-	// %v of nil) — that is the mapping's CURRENT behaviour and this test
-	// pins it so a later fix to the nil handling shows up here as a
-	// deliberate change, not a silent one.
-	if recs[1].User != "<nil>" || recs[1].Asset != "<nil>" || recs[1].RiskLevel != "" {
+	// NB: absent fields map to "" — pkg#295 (absorbed this round) made
+	// convert.AnyToStr(null) null-safe, and the fmt.Sprint reads were
+	// unified onto jmsapi.Str, so the whole row is now uniformly empty
+	// instead of "User:" " + Asset:"<nil>". This test USED to pin the
+	// "<nil>" rendering on purpose ("a later fix to the nil handling
+	// shows up here as a deliberate change") — that fix arrived, and
+	// this is the deliberate change it asked for.
+	if recs[1].User != "" || recs[1].Asset != "" || recs[1].Address != "" || recs[1].RiskLevel != "" {
 		t.Errorf("sparse-row mapping drifted: %+v", recs[1])
 	}
 	// The query must travel as a query string on the gateway shape.
