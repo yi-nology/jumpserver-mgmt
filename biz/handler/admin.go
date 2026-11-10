@@ -149,7 +149,7 @@ func RegisterUserTools(r *reg.Registry, c *repository.Client) {
 		_ = c.EnsureDelegationIdentity(ctx)
 		if configured, _ := c.DelegationConfigured(); configured &&
 			c.MayPresent(ctx, jmsapi.CapDelegation) && c.DelegationUserID == id {
-			status, raw, err = c.DelegationRequest(repository.DelegationCall{
+			status, raw, err = c.DelegationRequest(ctx, repository.DelegationCall{
 				Method: "POST", Path: string(jmsapi.ResSSHKeys), Body: body,
 				OperationID: "users.register_ssh_key",
 			})
@@ -184,14 +184,35 @@ func RegisterUserTools(r *reg.Registry, c *repository.Client) {
 			// it. Asking again also keeps the gate at the call site —
 			// which is what the mechanical guard in internal/arch checks
 			// for.
+			//
+			// The rollback runs OUTSIDE the caller's cancellation (#11):
+			// it is compensation for a write that already happened, so a
+			// client that went away must not leave the stray key behind —
+			// the delete gets its own deadline instead of the caller's ctx.
+			// WithoutCancel is the EXPLICIT spelling of that semantics
+			// (workers.go keeps the same discipline for detached work).
+			var rollbackErr error
+			rollbackCtx, cancelRollback := context.WithTimeout(context.WithoutCancel(ctx), 30*time.Second)
+			defer cancelRollback()
 			if configured, _ := c.DelegationConfigured(); configured &&
-				c.MayPresent(ctx, jmsapi.CapDelegation) && c.DelegationUserID == id {
-				_, _, _ = c.DelegationRequest(repository.DelegationCall{
+				c.MayPresent(rollbackCtx, jmsapi.CapDelegation) && c.DelegationUserID == id {
+				_, _, rollbackErr = c.DelegationRequest(rollbackCtx, repository.DelegationCall{
 					Method: "DELETE", Path: string(jmsapi.ResSSHKeys) + keyID + "/",
 					OperationID: "users.remove_ssh_key",
 				})
 			} else {
-				_ = c.Delete(ctx, jmsapi.ResSSHKeys, keyID)
+				rollbackErr = c.Delete(rollbackCtx, jmsapi.ResSSHKeys, keyID)
+			}
+			if rollbackErr != nil {
+				// The rollback failing is worth its own sentence: the old
+				// message said "it was removed again" unconditionally, and a
+				// caller who believed it left a key they did not know about.
+				return render.Failf("the API can only register an SSH key for the account that owns the calling credential: "+
+					"the key landed on user %s, not %s, and removing it again failed (%v) — "+
+					"the stray key is still on that account, remove it by hand. "+
+					"Register the key while authenticated as %s (the bastion UI, or koko with that user's own token), "+
+					"or point this MCP's delegation at that user with JMS_DELEGATION_USER_ID.",
+					owner, args.User, rollbackErr, args.User)
 			}
 			return render.Failf("the API can only register an SSH key for the account that owns the calling credential: "+
 				"the key landed on user %s, not %s, so it was removed again. "+
@@ -248,7 +269,7 @@ func RegisterUserTools(r *reg.Registry, c *repository.Client) {
 		_ = c.EnsureDelegationIdentity(ctx)
 		if configured, _ := c.DelegationConfigured(); configured &&
 			c.MayPresent(ctx, jmsapi.CapDelegation) && c.DelegationUserID == id {
-			status, raw, err := c.DelegationRequest(repository.DelegationCall{
+			status, raw, err := c.DelegationRequest(ctx, repository.DelegationCall{
 				Method: "DELETE", Path: string(jmsapi.ResSSHKeys) + args.KeyID + "/",
 				OperationID: "users.remove_ssh_key",
 			})

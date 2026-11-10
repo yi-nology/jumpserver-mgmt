@@ -107,8 +107,13 @@ func (c *Client) MintDelegation(call DelegationCall) (string, error) {
 // single-use credential. It returns the status and body without going through
 // the token-based client, because the whole point is that this call does NOT
 // carry the long-lived token.
-func (c *Client) DelegationRequest(call DelegationCall) (int, []byte, error) {
-	return c.Client.DelegationRequest(context.Background(), c.config(), call)
+//
+// The ctx is the CALLER's: cancelling it cancels the outbound request (#11 —
+// this used to hard-code context.Background(), so an MCP client that went away
+// left the JumpServer side running to completion and the single-use credential
+// consumed, while the client read the silence as "failed, may retry").
+func (c *Client) DelegationRequest(ctx context.Context, call DelegationCall) (int, []byte, error) {
+	return c.Client.DelegationRequest(ctx, c.config(), call)
 }
 
 // SendWithDelegation performs a request with an ALREADY-minted credential.
@@ -118,8 +123,9 @@ func (c *Client) DelegationRequest(call DelegationCall) (int, []byte, error) {
 // can only be checked by sending a token whose signature no longer matches the
 // request. Minting a fresh token per attempt would prove nothing — every such
 // attempt would be correctly signed and therefore correctly accepted.
-func (c *Client) SendWithDelegation(token string, call DelegationCall) (int, []byte, error) {
-	return c.Client.SendWithDelegation(context.Background(), token, c.config(), call)
+// The ctx travels for the same reason as DelegationRequest's (#11).
+func (c *Client) SendWithDelegation(ctx context.Context, token string, call DelegationCall) (int, []byte, error) {
+	return c.Client.SendWithDelegation(ctx, token, c.config(), call)
 }
 
 // LoadDelegationSecret resolves the secret without ever printing it.
