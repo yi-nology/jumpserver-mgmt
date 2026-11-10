@@ -7,9 +7,26 @@
 
 ### 变更
 
+- **地板提升**：go 指令 1.26.0 → 1.27.0；`go get -u ./...` 全量升级（含底座
+  jumpserver-kit v0.12.4 → v0.12.5——带上 risk 门四个漏判修复）；
+  restore-go-modcache.sh 清单与 go.mod 逐版本同步。guardx/tools 与底座钉住的
+  v0.23.4 / v0.13.4 对齐（v0.24.1 的 logredact 过度脱敏是全车队契约问题）。
+
 ### 新增
 
 ### 修复
+
+- **委派请求透传调用方 ctx**（#11）：repository 层的
+  `DelegationRequest` / `SendWithDelegation` 原来硬编码
+  `context.Background()`——MCP 客户端取消/断开后，handler 侧 ctx 已死、
+  JumpServer 侧的委派调用照跑到底（单次凭据在服务端被消费，客户端却把
+  静默当失败可重试）。两个方法改为接受 ctx 并透传给底层 jmsapi（底层本就
+  接受）；六个调用点（delegation.go 三处、admin.go 三处）改传 handler 拿到的
+  ctx。admin.go 的**回滚 DELETE** 例外：那是已发生写操作的补偿，不能被客户端
+  取消打断——显式 `context.WithoutCancel(ctx)` + 自带 30s 预算（与 workers.go
+  的纪律同款），且回滚失败不再被吞（原错误信息无条件说「已删除」，失败时
+  现在明说钥匙还挂在错误账号上）。测试：httptest 服务端观测请求取消
+  （两方法各一条 + 未取消对照组）。
 
 ## [0.12.0] - 2026-11-06
 

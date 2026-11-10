@@ -155,7 +155,7 @@ func RegisterDelegationTools(r *reg.Registry, c *repository.Client) {
 			Body:        body,
 			OperationID: repository.StrDefault("ai.delegation_call", args.OperationID),
 		}
-		status, raw, err := c.DelegationRequest(call)
+		status, raw, err := c.DelegationRequest(ctx, call)
 		if err != nil {
 			return render.Failf("delegation call failed: %v", err)
 		}
@@ -275,7 +275,7 @@ func RegisterDelegationTools(r *reg.Registry, c *repository.Client) {
 
 		out := []*jmsms.DelegationCheck{}
 		for _, tc := range cases {
-			status, raw, err := c.SendWithDelegation(token, tc.call)
+			status, raw, err := c.SendWithDelegation(ctx, token, tc.call)
 			entry := &jmsms.DelegationCheck{Case: tc.name, Expect: tc.expect}
 			if err != nil {
 				entry.TransportError = jms.Opt(err.Error())
@@ -293,7 +293,7 @@ func RegisterDelegationTools(r *reg.Registry, c *repository.Client) {
 		fresh, ferr := c.MintDelegation(base)
 		st2 := 0
 		if ferr == nil {
-			st2, _, _ = c.SendWithDelegation(fresh, base)
+			st2, _, _ = c.SendWithDelegation(ctx, fresh, base)
 		}
 		out = append(out, &jmsms.DelegationCheck{
 			Case: "second_fresh_credential", Expect: "a newly minted one must work",
