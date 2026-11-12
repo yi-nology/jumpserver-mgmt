@@ -395,7 +395,7 @@ v0.3.1 发布后，`go install ...@v0.3.1` 装出来的二进制 `--version` 说
 - CI(release)：tag 触发发 GitHub Release（六个平台 + checksums）
 
 README 承诺了「方式二：release 二进制（见 Releases 页）」，
-但**从来没有发过 Release** ⇒ 照着做的人下到的��� 404。
+但**从来没有发过 Release** ⇒ 照着做的人下到的包 404。
 （org 的惯例也是发 Release：git-ferry / agent-harness 都带产物 + checksums。）
 - .github/workflows/release.yml：
   - test job：先跑 vet + 测试，**红了就不发**（tag 已经发出去了，
