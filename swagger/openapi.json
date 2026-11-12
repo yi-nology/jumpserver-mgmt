@@ -1914,7 +1914,8 @@
           }
         },
         "required": [
-          "asset"
+          "asset",
+          "confirm"
         ],
         "additionalProperties": false
       },
