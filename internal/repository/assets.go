@@ -9,7 +9,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/oekit/pkg/slicex"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/oekit/pkg/convert"
@@ -74,7 +74,7 @@ func (c *Client) PlatformIDByName(ctx context.Context, name string) (string, err
 	names := slicex.Map(rows, func(p map[string]any) string {
 		return convert.AnyToStr(p["name"])
 	})
-	sort.Strings(names)
+	slices.Sort(names)
 	return "", fmt.Errorf("no such platform: %s (known: %s)", name, strings.Join(names, ", "))
 }
 

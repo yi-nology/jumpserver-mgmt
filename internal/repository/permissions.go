@@ -11,7 +11,6 @@ import (
 	"github.com/oekit/pkg/slicex"
 	"maps"
 	"slices"
-	"sort"
 	"strings"
 
 	"github.com/oekit/pkg/convert"
@@ -81,8 +80,8 @@ func (c *Client) EffectiveAssets(ctx context.Context, perm map[string]any) ([]ma
 		}
 	}
 	out := slices.Collect(maps.Values(seen))
-	sort.Slice(out, func(i, j int) bool {
-		return convert.AnyToStr(out[i]["name"]) < convert.AnyToStr(out[j]["name"])
+	slices.SortFunc(out, func(a, b map[string]any) int {
+		return strings.Compare(convert.AnyToStr(a["name"]), convert.AnyToStr(b["name"]))
 	})
 	return out, nil
 }

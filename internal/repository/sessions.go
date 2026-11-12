@@ -13,7 +13,7 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/yi-nology/jumpserver-kit/pkg/jmsapi"
@@ -48,9 +48,9 @@ func (c *Client) SessionAssetIDs(ctx context.Context, ref string) ([]string, []m
 		ids = append(ids, id)
 		meta = append(meta, map[string]any{"id": id, "name": v["name"], "address": v["address"]})
 	}
-	sort.Strings(ids)
-	sort.SliceStable(meta, func(i, j int) bool {
-		return convert.AnyToStr(meta[i]["id"]) < convert.AnyToStr(meta[j]["id"])
+	slices.Sort(ids)
+	slices.SortStableFunc(meta, func(a, b map[string]any) int {
+		return strings.Compare(convert.AnyToStr(a["id"]), convert.AnyToStr(b["id"]))
 	})
 	return ids, meta, nil
 }

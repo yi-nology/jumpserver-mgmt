@@ -11,7 +11,6 @@ import (
 	"maps"
 	"net/url"
 	"slices"
-	"sort"
 	"strings"
 
 	"github.com/yi-nology/jumpserver-kit/pkg/jmsapi"
@@ -77,7 +76,7 @@ func (c *Client) ContentTypeID(ctx context.Context, model string) (int, error) {
 			}
 		}
 	}
-	sort.Strings(models)
+	slices.Sort(models)
 	return 0, fmt.Errorf("unknown content type %q; known models include: %s",
 		model, strings.Join(models, ", "))
 }
@@ -99,7 +98,7 @@ func (c *Client) LabelAttach(ctx context.Context, labelID string, ctID int, add,
 		delete(desired, id)
 	}
 	want := slices.Collect(maps.Keys(desired))
-	sort.Strings(want)
+	slices.Sort(want)
 
 	// The gateway's Put shape, not a path built here: the sub-resource PUT
 	// has a gateway form (Put(res, id, sub, ...) — the same shape Put has

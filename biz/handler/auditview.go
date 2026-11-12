@@ -21,7 +21,7 @@ package handler
 import (
 	"context"
 	"fmt"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/yi-nology/jumpserver-mgmt/biz/model/jmsms"
@@ -86,8 +86,8 @@ func RegisterAuditViewTools(r *reg.Registry, c *repository.Client) {
 				DateLastLogin: jmsapi.FieldStr(a["date_last_login"]),
 			})
 		}
-		sort.Slice(accounts, func(i, j int) bool {
-			return accounts[i].Username < accounts[j].Username
+		slices.SortFunc(accounts, func(a, b jmsms.AccountSummary) int {
+			return strings.Compare(a.Username, b.Username)
 		})
 
 		// Permissions that cover this asset, and what they actually grant.
@@ -132,7 +132,7 @@ func RegisterAuditViewTools(r *reg.Registry, c *repository.Client) {
 					holders = append(holders, "group:"+convert.AnyToStr(m["name"]))
 				}
 			}
-			sort.Strings(holders)
+			slices.Sort(holders)
 			accts := asStringSlice(detail["accounts"])
 			judged := service.JudgeGrant(accts, accountNames)
 			grants = append(grants, jmsms.PermissionGrant{
@@ -142,7 +142,7 @@ func RegisterAuditViewTools(r *reg.Registry, c *repository.Client) {
 				Note:       jms.Opt(judged.Note),
 			})
 		}
-		sort.Slice(grants, func(i, j int) bool { return grants[i].Permission < grants[j].Permission })
+		slices.SortFunc(grants, func(a, b jmsms.PermissionGrant) int { return strings.Compare(a.Permission, b.Permission) })
 
 		// The tree position and the labels used to be read here and carried in
 		// the answer's own asset block. The contract the tool declares holds
@@ -165,7 +165,7 @@ func RegisterAuditViewTools(r *reg.Registry, c *repository.Client) {
 				}
 			}
 		}
-		sort.Strings(protocols)
+		slices.Sort(protocols)
 
 		// The verdict: the three silent failures, in the order they bite.
 		// Each one is a check with its own status and its own fix, so the
@@ -285,7 +285,7 @@ func RegisterAuditViewTools(r *reg.Registry, c *repository.Client) {
 				nodes = append(nodes, name)
 			}
 		}
-		sort.Strings(nodes)
+		slices.Sort(nodes)
 		labels := []string{}
 		for _, l := range jmsapi.AsSlice(asset["labels"]) {
 			lm, ok := l.(map[string]any)
@@ -296,7 +296,7 @@ func RegisterAuditViewTools(r *reg.Registry, c *repository.Client) {
 				labels = append(labels, name)
 			}
 		}
-		sort.Strings(labels)
+		slices.Sort(labels)
 
 		res := &jmsms.AssetAuditResult{
 			// The machine, in the shared asset shape: the same one the asset

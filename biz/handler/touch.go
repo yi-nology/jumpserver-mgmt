@@ -22,6 +22,7 @@ package handler
 // hundreds of megabytes of asciinema off the bastion.
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"github.com/yi-nology/jumpserver-kit/model/jms"
@@ -91,9 +92,7 @@ func (t *touchAsset) add(s map[string]any, cmdCount int) {
 	if t.first == "" || start < t.first {
 		t.first = start
 	}
-	if start > t.last {
-		t.last = start
-	}
+	t.last = max(t.last, start)
 	t.total++
 	if s["user"] != nil {
 		t.users[convert.AnyToStr(s["user"])] = true
@@ -225,11 +224,11 @@ func aggregateTouch(sessions []map[string]any, cmdCount map[string]int, lastInpu
 	for _, b := range buckets {
 		res.Assets = append(res.Assets, b)
 	}
-	sort.SliceStable(res.Assets, func(i, j int) bool {
-		if res.Assets[i].last != res.Assets[j].last {
-			return res.Assets[i].last > res.Assets[j].last
+	slices.SortStableFunc(res.Assets, func(a, b *touchAsset) int {
+		if c := cmp.Compare(b.last, a.last); c != 0 {
+			return c
 		}
-		return res.Assets[i].name < res.Assets[j].name
+		return cmp.Compare(a.name, b.name)
 	})
 	return res
 }
@@ -299,8 +298,8 @@ func RegisterTouchTools(r *reg.Registry, c *repository.Client) {
 		multiUser := []jmsms.TouchMultiUser{}
 		withReplay, withCmds, withEvidence, evidenceWithCmds := 0, 0, 0, 0
 		for _, b := range buckets.Assets {
-			sort.SliceStable(b.recent, func(i, j int) bool {
-				return b.recent[i].GetTime() > b.recent[j].GetTime()
+			slices.SortStableFunc(b.recent, func(a, b *jmsms.TouchRecent) int {
+				return cmp.Compare(b.GetTime(), a.GetTime())
 			})
 			recent := b.recent
 			if len(recent) > limit {
@@ -344,12 +343,11 @@ func RegisterTouchTools(r *reg.Registry, c *repository.Client) {
 				Assets:   jmsapi.FieldInt32(len(buckets.UserAssets[u])),
 			})
 		}
-		sort.SliceStable(topUsers, func(i, j int) bool {
-			a, c := topUsers[i].GetSessions(), topUsers[j].GetSessions()
-			if a != c {
-				return a > c
+		slices.SortStableFunc(topUsers, func(a, b jmsms.TouchTopUser) int {
+			if c := cmp.Compare(b.GetSessions(), a.GetSessions()); c != 0 {
+				return c
 			}
-			return topUsers[i].User < topUsers[j].User
+			return cmp.Compare(a.User, b.User)
 		})
 
 		res := &jmsms.AssetTouchHistoryResult{

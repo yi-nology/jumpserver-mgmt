@@ -16,9 +16,10 @@ package handler
 // on someone else's machine at 3am.
 
 import (
+	"cmp"
 	"context"
 	"fmt"
-	"sort"
+	"slices"
 	"strings"
 	"time"
 
@@ -506,8 +507,8 @@ func RegisterCommandGuard(r *reg.Registry, c *repository.Client) {
 				Scope:          jmsapi.FieldStr(scope),
 			})
 		}
-		sort.Slice(matches, func(i, j int) bool {
-			return matches[i].GetPriority() < matches[j].GetPriority()
+		slices.SortFunc(matches, func(a, b jmsms.MatchedFilter) int {
+			return cmp.Compare(a.GetPriority(), b.GetPriority())
 		})
 
 		// The verdict. The old shape was a four-value enum ("blocked",

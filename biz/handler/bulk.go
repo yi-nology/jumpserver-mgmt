@@ -13,9 +13,10 @@
 package handler
 
 import (
+	"cmp"
 	"context"
 	"fmt"
-	"sort"
+	"slices"
 	"strings"
 	"time"
 
@@ -167,9 +168,9 @@ func RegisterPermissionCompare(r *reg.Registry, c *repository.Client) {
 				onlyRight = append(onlyRight, n)
 			}
 		}
-		sort.Strings(onlyLeft)
-		sort.Strings(onlyRight)
-		sort.Strings(both)
+		slices.Sort(onlyLeft)
+		slices.Sort(onlyRight)
+		slices.Sort(both)
 
 		res := &jmsms.PermissionComparison{
 			Left: &jmsms.PermissionSide{
@@ -219,7 +220,7 @@ func holderNames(perm map[string]any) []string {
 			out = append(out, "group:"+jmsapi.Str(m["name"]))
 		}
 	}
-	sort.Strings(out)
+	slices.Sort(out)
 	return out
 }
 
@@ -268,10 +269,10 @@ func RegisterSecurityReview(r *reg.Registry, c *repository.Client) {
 				neverRotated = append(neverRotated, username)
 			}
 		}
-		sort.Strings(superusers)
-		sort.Strings(neverLoggedIn)
-		sort.Strings(neverRotated)
-		sort.Strings(inactive)
+		slices.Sort(superusers)
+		slices.Sort(neverLoggedIn)
+		slices.Sort(neverRotated)
+		slices.Sort(inactive)
 
 		// Failed logins, grouped by source address and by account.
 		logs, err := c.List(ctx, jmsapi.ResLoginLogs)
@@ -315,7 +316,7 @@ func RegisterSecurityReview(r *reg.Registry, c *repository.Client) {
 			for _, b := range rows {
 				blocked = append(blocked, jmsapi.Str(b["ip"]))
 			}
-			sort.Strings(blocked)
+			slices.Sort(blocked)
 		} else {
 			// The list is unreadable (a permission the credential lacks, an
 			// XPack-only route): "unknown" must not fold into "nobody is
@@ -349,10 +350,10 @@ func RegisterSecurityReview(r *reg.Registry, c *repository.Client) {
 				unblocked = append(unblocked, ip)
 			}
 		}
-		sort.Slice(topOffenders, func(i, j int) bool {
-			return topOffenders[i].Failures > topOffenders[j].Failures
+		slices.SortFunc(topOffenders, func(a, b jmsms.OffendingIP) int {
+			return cmp.Compare(b.Failures, a.Failures)
 		})
-		sort.Strings(unblocked)
+		slices.Sort(unblocked)
 
 		res := &jmsms.SecurityReviewResult{
 			WindowDays:           int32(days),

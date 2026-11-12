@@ -1,10 +1,11 @@
 package handler
 
 import (
+	"cmp"
 	"context"
 	"encoding/json"
 	"fmt"
-	"sort"
+	"slices"
 	"strings"
 	"time"
 
@@ -398,8 +399,8 @@ func RegisterJobAuditTool(r *reg.Registry, c *repository.Client) {
 				ended:   convert.AnyToStr(l["date_finished"]),
 			})
 		}
-		sort.SliceStable(picked, func(i, j int) bool {
-			return picked[i].created > picked[j].created
+		slices.SortStableFunc(picked, func(a, b execRow) int {
+			return cmp.Compare(b.created, a.created)
 		})
 		total := len(picked)
 		// The counts describe the whole matching set, not the part that

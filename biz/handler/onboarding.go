@@ -35,7 +35,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
-	"sort"
+	"slices"
 	"strings"
 	"time"
 
@@ -435,7 +435,7 @@ func RegisterAccessReviewTools(r *reg.Registry, c *repository.Client) {
 			}
 		}
 		accounts := asStringSlice(p["accounts"])
-		sort.Strings(accounts)
+		slices.Sort(accounts)
 
 		// The actions are the bastion's own labelled choices, so they keep
 		// their value and their label.
@@ -553,8 +553,8 @@ func RegisterAccessReviewTools(r *reg.Registry, c *repository.Client) {
 				Nodes:        nodeNames,
 			})
 		}
-		sort.Slice(assets, func(i, j int) bool {
-			return assets[i].GetAddress() < assets[j].GetAddress()
+		slices.SortFunc(assets, func(a, b *jmsms.AssetRef) int {
+			return strings.Compare(a.GetAddress(), b.GetAddress())
 		})
 
 		// Which grant is responsible for each reachable asset. An access
