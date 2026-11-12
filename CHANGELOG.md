@@ -2,6 +2,12 @@
 
 > 本文件由 `matrix-tools/scripts/gen_changelogs.py` 从 git 历史生成，按 tag 切段、取每段内的 conventional commit 渲染。
 
+## [v0.14.12] — 2026-11-13
+
+- fix(policy): jms_gather_run 的 confirm 改必填（去掉 omitempty），SDK schema
+  校验防线恢复生效；补机械门禁 TestNonConditionalWriteToolRequiresConfirmInSchema
+  对策略表逐工具断言 required 含 confirm（issue #14）。
+
 ## [v0.14.11] — 2026-11-12
 
 - 杂务：吃高版本 Go 语言特性做纯现代化重构——sort→slices/maps、range N、builtin max
