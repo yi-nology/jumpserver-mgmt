@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"strings"
 	"testing"
 
@@ -128,6 +129,40 @@ func TestEveryWriteToolCarriesItsConfirmationSentence(t *testing.T) {
 		}
 		if p.Confirm != "" && !strings.Contains(p.Confirm, "confirm=true") {
 			t.Errorf("tool %s: confirmation sentence does not mention the flag: %q", name, p.Confirm)
+		}
+	}
+}
+
+// A non-conditional write tool's confirm flag has to be REQUIRED in the
+// input schema, not merely present (AGENTS.md §2.10: confirm must be a
+// required argument, so the SDK's schema validation is the first line of
+// defence and the kit's rejected-calls audit still sees refused calls).
+//
+// The existing field-presence check above cannot see this: a struct field
+// tagged `json:"confirm,omitempty"` registers, passes every classification
+// check, and still keeps confirm out of the schema's required list — the
+// loophole jms_gather_run sat in (issue #14, the only one of 97 tools).
+// This walks the DERIVED schemas, so the json tag itself is under test.
+func TestNonConditionalWriteToolRequiresConfirmInSchema(t *testing.T) {
+	r := newRegistry(t)
+	for name, p := range policy.Table {
+		if p.Confirm == "" || p.Conditional {
+			continue
+		}
+		in, _, ok := r.Schema(name)
+		if !ok || len(in) == 0 {
+			t.Errorf("tool %s declares no input schema; confirm cannot be required", name)
+			continue
+		}
+		var schema struct {
+			Required []string `json:"required"`
+		}
+		if err := json.Unmarshal(in, &schema); err != nil {
+			t.Errorf("tool %s: undecodable input schema: %v", name, err)
+			continue
+		}
+		if !slices.Contains(schema.Required, "confirm") {
+			t.Errorf("tool %s: policy demands confirm (non-conditional write) but the input schema's required list is %v — check the arg struct's json tag for omitempty", name, schema.Required)
 		}
 	}
 }

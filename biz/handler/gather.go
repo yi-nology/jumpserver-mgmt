@@ -156,7 +156,11 @@ func RegisterGatherTools(r *reg.Registry, c *repository.Client) {
 
 	type gatherRunArgs struct {
 		AssetRef string `json:"asset" jsonschema:"asset to scan for accounts"`
-		Confirm  bool   `json:"confirm,omitempty" jsonschema:"must be true: this runs remote automation on the host"`
+		// Confirm is a required field (no omitempty): jms_gather_run is a
+		// non-conditional write, so the SDK's schema validation must refuse
+		// a confirm-less call up front — the same rule gatherApplyArgs
+		// follows (issue #14; AGENTS.md §2.10).
+		Confirm bool `json:"confirm" jsonschema:"must be true: this runs remote automation on the host"`
 	}
 	reg.Add(r, &mcp.Tool{
 		Name: "jms_gather_run",
