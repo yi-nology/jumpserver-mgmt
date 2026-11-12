@@ -20,7 +20,7 @@ package service
 import (
 	"fmt"
 	"github.com/oekit/pkg/slicex"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/yi-nology/jumpserver-kit/pkg/jmsapi"
@@ -115,7 +115,7 @@ func JudgeGrant(granted []string, assetAccounts []string) Grant {
 		}
 	case Contains(granted, AllAccounts):
 		usable := append([]string{}, assetAccounts...)
-		sort.Strings(usable)
+		slices.Sort(usable)
 		return Grant{
 			Accounts: usable,
 			Usable:   true,
@@ -132,7 +132,7 @@ func JudgeGrant(granted []string, assetAccounts []string) Grant {
 			usable = append(usable, want)
 		}
 	}
-	sort.Strings(usable)
+	slices.Sort(usable)
 	if len(usable) == 0 {
 		return Grant{
 			Note: fmt.Sprintf("names account(s) %s that this asset does not have, "+
@@ -182,7 +182,7 @@ func JudgeAccounts(accounts []map[string]any) AccountState {
 			st.Disabled = append(st.Disabled, fmt.Sprint(a["username"]))
 		}
 	}
-	sort.Strings(st.Disabled)
+	slices.Sort(st.Disabled)
 	st.AllDisabled = st.Total > 0 && len(st.Disabled) == st.Total
 	return st
 }

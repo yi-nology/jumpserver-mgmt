@@ -33,7 +33,6 @@ import (
 	"fmt"
 	"maps"
 	"slices"
-	"sort"
 	"strings"
 
 	"github.com/yi-nology/jumpserver-mgmt/internal/service"
@@ -284,7 +283,7 @@ func RegisterSecurityTools(r *reg.Registry, c *repository.Client) {
 				continue
 			}
 			path := t
-			for i := 0; i < 8; i++ {
+			for range 8 {
 				p, ok := byP[path]
 				if !ok || p == "" || p == path {
 					break
@@ -450,8 +449,7 @@ func RegisterSecurityTools(r *reg.Registry, c *repository.Client) {
 // in the note. The order is fixed because a profile that reorders itself
 // between two identical calls is a profile nobody can read twice.
 func operateLogTypeProfile(types map[string]int) string {
-	keys := slices.Collect(maps.Keys(types))
-	sort.Strings(keys)
+	keys := slices.Sorted(maps.Keys(types))
 	parts := make([]string, 0, len(keys))
 	for _, k := range keys {
 		label := k

@@ -44,7 +44,6 @@ import (
 	"net/url"
 	"regexp"
 	"slices"
-	"sort"
 	"strconv"
 	"strings"
 
@@ -146,7 +145,7 @@ func RegisterGatherTools(r *reg.Registry, c *repository.Client) {
 			Max:   500,
 		}.Build()
 		if len(drift) > 0 {
-			sort.Strings(drift)
+			slices.Sort(drift)
 			// The envelope has one slot for prose and none for a list, so the
 			// drift rides in the note -- the same sentence, the same names.
 			res.Note = "these managed accounts are no longer present on their host: " +
@@ -199,7 +198,7 @@ func RegisterGatherTools(r *reg.Registry, c *repository.Client) {
 				fresh = append(fresh, u)
 			}
 		}
-		sort.Strings(fresh)
+		slices.Sort(fresh)
 
 		res := &jmsms.GatherRunResult{
 			Asset:      jmsapi.Str(meta[0]["name"]),
@@ -318,7 +317,7 @@ func RegisterGatherTools(r *reg.Registry, c *repository.Client) {
 		}
 		if len(adopt) == 0 {
 			if len(already) > 0 {
-				sort.Strings(already)
+				slices.Sort(already)
 				return render.Text(&jmsms.GatherApplyResult{
 					Asset:            jmsapi.Str(meta[0]["name"]),
 					Adopted:          []string{},
@@ -361,8 +360,8 @@ func RegisterGatherTools(r *reg.Registry, c *repository.Client) {
 				adopted = append(adopted, u)
 			}
 		}
-		sort.Strings(adopted)
-		sort.Strings(skipped)
+		slices.Sort(adopted)
+		slices.Sort(skipped)
 		res := &jmsms.GatherApplyResult{
 			Asset:      jmsapi.Str(meta[0]["name"]),
 			Adopted:    adopted,
@@ -429,9 +428,7 @@ func isConfirmed(v any) bool {
 }
 
 func keys(m map[string]bool) []string {
-	out := slices.Collect(maps.Keys(m))
-	sort.Strings(out)
-	return out
+	return slices.Sorted(maps.Keys(m))
 }
 
 // asDetail turns the gathered account's free-form detail blob into readable
@@ -441,11 +438,7 @@ func asDetail(v any) string {
 	if !ok {
 		return ""
 	}
-	keys := make([]string, 0, len(m))
-	for k := range m {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
+	keys := slices.Sorted(maps.Keys(m))
 	var parts []string
 	for _, k := range keys {
 		parts = append(parts, fmt.Sprintf("%s=%v", k, m[k]))
@@ -768,7 +761,7 @@ func RegisterLabelRoleTools(r *reg.Registry, c *repository.Client) {
 		}
 		full := func(title string) string {
 			path := title
-			for i := 0; i < 8; i++ {
+			for range 8 {
 				parent, ok := byP[path]
 				if !ok || parent == "" || parent == path {
 					break

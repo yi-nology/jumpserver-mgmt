@@ -32,7 +32,7 @@ package handler
 
 import (
 	"context"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -230,7 +230,7 @@ func RegisterGroupTools(r *reg.Registry, c *repository.Client) {
 						members = append(members, jmsapi.Str(u))
 					}
 				}
-				sort.Strings(members)
+				slices.Sort(members)
 				id := jmsapi.Str(g["id"])
 				return jmsms.UserGroupSummary{
 					ID:            jmsapi.FieldStr(g["id"]),

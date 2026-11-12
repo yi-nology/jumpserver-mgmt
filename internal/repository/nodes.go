@@ -8,7 +8,7 @@ package repository
 import (
 	"context"
 	"fmt"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/yi-nology/jumpserver-kit/pkg/jmsapi"
@@ -93,6 +93,6 @@ func (t *NodeTree) Descendants(nodeID string) []string {
 			out = append(out, id)
 		}
 	}
-	sort.Strings(out)
+	slices.Sort(out)
 	return out
 }

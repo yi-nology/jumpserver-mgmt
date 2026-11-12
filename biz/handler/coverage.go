@@ -31,7 +31,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -168,7 +168,7 @@ func RegisterCoverageTools(r *reg.Registry, c *repository.Client) {
 			}
 		}
 		for id := range heldBy {
-			sort.Strings(heldBy[id])
+			slices.Sort(heldBy[id])
 		}
 
 		// The per-user reach has to be read for EVERY candidate user before
@@ -268,6 +268,6 @@ func nodeNames(perm map[string]any) []string {
 			out = append(out, jmsapi.Str(m["name"]))
 		}
 	}
-	sort.Strings(out)
+	slices.Sort(out)
 	return out
 }

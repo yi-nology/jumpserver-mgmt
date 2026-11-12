@@ -37,7 +37,7 @@ package handler
 import (
 	"context"
 	"fmt"
-	"sort"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -327,7 +327,7 @@ func aclLookup(ctx context.Context, c *repository.Client, resource jmsapi.Resour
 			return jmsapi.Str(m["id"]), nil
 		}
 	}
-	sort.Strings(names)
+	slices.Sort(names)
 	return "", fmt.Errorf("no rule %q; available: %s", ref, strings.Join(names, ", "))
 }
 

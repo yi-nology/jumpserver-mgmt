@@ -31,9 +31,10 @@
 package handler
 
 import (
+	"cmp"
 	"context"
 	"net/url"
-	"sort"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -294,15 +295,14 @@ func RegisterRBACTools(r *reg.Registry, c *repository.Client) {
 		for _, e := range byID {
 			all = append(all, e)
 		}
-		sort.Slice(all, func(i, j int) bool {
-			a, b := all[i], all[j]
-			if a.appLabel != b.appLabel {
-				return a.appLabel < b.appLabel
+		slices.SortFunc(all, func(a, b *entry) int {
+			if c := cmp.Compare(a.appLabel, b.appLabel); c != 0 {
+				return c
 			}
-			if a.model != b.model {
-				return a.model < b.model
+			if c := cmp.Compare(a.model, b.model); c != 0 {
+				return c
 			}
-			return a.codename < b.codename
+			return cmp.Compare(a.codename, b.codename)
 		})
 		for _, e := range all {
 			if needle != "" {

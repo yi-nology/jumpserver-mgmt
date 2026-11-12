@@ -30,7 +30,7 @@ package handler
 import (
 	"context"
 	"fmt"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/yi-nology/jumpserver-mgmt/biz/model/jmsms"
@@ -327,10 +327,10 @@ func registerNetPathTool(r *reg.Registry, c *repository.Client) {
 				Note:         jmsapi.FieldStr(note),
 			})
 		}
-		sort.SliceStable(steps, func(i, j int) bool {
-			return steps[i].GetName() < steps[j].GetName()
+		slices.SortStableFunc(steps, func(a, b *jmsms.NetPathStep) int {
+			return strings.Compare(a.GetName(), b.GetName())
 		})
-		sort.Strings(gateways)
+		slices.Sort(gateways)
 		res.ZoneGateways = gateways
 
 		// The machines behind the zone, and the zone's own record.

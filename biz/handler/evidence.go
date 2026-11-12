@@ -24,10 +24,11 @@ package handler
 // coverage" number that has_replay produces is exactly that illusion.
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"github.com/yi-nology/jumpserver-kit/model/jms"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/yi-nology/jumpserver-mgmt/internal/service"
@@ -125,7 +126,7 @@ func RegisterEvidenceTools(r *reg.Registry, c *repository.Client) {
 			bySession[r.Session] = append(bySession[r.Session], r)
 		}
 		for _, rs := range bySession {
-			sort.SliceStable(rs, func(i, j int) bool { return rs[i].Timestamp > rs[j].Timestamp })
+			slices.SortStableFunc(rs, func(a, b repository.CommandRecord) int { return cmp.Compare(b.Timestamp, a.Timestamp) })
 		}
 
 		type cand struct {
@@ -150,8 +151,8 @@ func RegisterEvidenceTools(r *reg.Registry, c *repository.Client) {
 				evidence = append(evidence, cand{s})
 			}
 		}
-		sort.SliceStable(evidence, func(i, j int) bool {
-			return convert.AnyToStr(evidence[i].s["date_start"]) > convert.AnyToStr(evidence[j].s["date_start"])
+		slices.SortStableFunc(evidence, func(a, b cand) int {
+			return strings.Compare(convert.AnyToStr(b.s["date_start"]), convert.AnyToStr(a.s["date_start"]))
 		})
 		// The evidence list is NOT capped here: the cap applies to the
 		// timeline, and the blind spots are collected from the whole set, so

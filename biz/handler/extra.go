@@ -21,9 +21,10 @@ package handler
 // executed over koko the output *is* retrievable.
 
 import (
+	"cmp"
 	"context"
 	"net/url"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -76,7 +77,7 @@ func RegisterTranscriptTools(r *reg.Registry, c *repository.Client) {
 					"bastion, or the session predates it"),
 			})
 		}
-		sort.SliceStable(recs, func(i, j int) bool { return recs[i].Timestamp < recs[j].Timestamp })
+		slices.SortStableFunc(recs, func(a, b repository.CommandRecord) int { return cmp.Compare(a.Timestamp, b.Timestamp) })
 
 		limit := args.MaxChars
 		limit = repository.NormLimit(limit, 20000, 200000)
@@ -179,7 +180,7 @@ func RegisterTranscriptTools(r *reg.Registry, c *repository.Client) {
 		// The sort key is the NUMERIC Timestamp, which the contract row does
 		// not carry (it only has the display string), so the rows are put in
 		// that order here and ListSpec keeps it (Less nil).
-		sort.SliceStable(recs, func(i, j int) bool { return recs[i].Timestamp > recs[j].Timestamp })
+		slices.SortStableFunc(recs, func(a, b repository.CommandRecord) int { return cmp.Compare(b.Timestamp, a.Timestamp) })
 		// filter → map → sort → truncate → count: render.ListSpec owns the
 		// counting. total is how many command rows matched, before the cap.
 		return render.Text(render.ListSpec[repository.CommandRecord, jmsms.CommandAuditSummary]{

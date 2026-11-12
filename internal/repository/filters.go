@@ -8,7 +8,7 @@ package repository
 import (
 	"context"
 	"fmt"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/yi-nology/jumpserver-kit/pkg/jmsapi"
@@ -31,7 +31,7 @@ func (c *Client) CommandGroupID(ctx context.Context, ref string) (string, error)
 			return convert.AnyToStr(g["id"]), nil
 		}
 	}
-	sort.Strings(names)
+	slices.Sort(names)
 	return "", fmt.Errorf("no such command group: %s (have: %s). Create it with jms_cmdgroup_create",
 		ref, strings.Join(names, ", "))
 }

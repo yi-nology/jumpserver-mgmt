@@ -18,7 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"sort"
+	"slices"
 	"strings"
 	"time"
 
@@ -1057,7 +1057,7 @@ func RegisterOpsTools(r *reg.Registry, c *repository.Client) {
 				"80/443 open, there is no SSH to find and the entry is correct as it is."),
 		}
 		if len(unsupported) > 0 {
-			sort.Strings(unsupported)
+			slices.Sort(unsupported)
 			res.PlatformsWithoutTest = unsupported
 		}
 		return render.Text(res)
